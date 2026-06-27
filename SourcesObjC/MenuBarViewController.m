@@ -45,6 +45,49 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
 - (void)drawRect:(NSRect)r { [HEXA(255,255,255,.055) setFill]; NSRectFill(r); }
 @end
 
+// ── Gold eye glyph (Protection header) ────────────────────────────────────
+// Line-art almond eye + filled pupil in gold, matching the design's inline SVG
+// (viewBox 0 0 20 20, stroke #C8A840). Replaces the off-brand color emoji.
+@interface PEEye : NSView
+@end
+@implementation PEEye
+- (instancetype)initWithFrame:(NSRect)f { self=[super initWithFrame:f]; if(self) self.wantsLayer=YES; return self; }
+- (void)drawRect:(NSRect)r {
+    CGFloat s=NSWidth(self.bounds)/20.0;          // scale from the 20-unit viewBox
+    // Design y is top-down; this view is bottom-up, so map (x,yTop)→(x*s,(20-yTop)*s).
+    #define P(x,yt) NSMakePoint((x)*s,(20-(yt))*s)
+    NSColor *gold=HEXA(200,168,64,1);
+    NSBezierPath *eye=[NSBezierPath bezierPath];
+    eye.lineWidth=1.5*s; eye.lineCapStyle=NSLineCapStyleRound; eye.lineJoinStyle=NSLineJoinStyleRound;
+    [eye moveToPoint:P(2,10)];
+    [eye curveToPoint:P(18,10) controlPoint1:P(6,3)  controlPoint2:P(14,3)];   // upper lid
+    [eye curveToPoint:P(2,10)  controlPoint1:P(14,17) controlPoint2:P(6,17)];  // lower lid
+    [gold setStroke]; [eye stroke];
+    NSBezierPath *pupil=[NSBezierPath bezierPathWithOvalInRect:NSMakeRect((10-2.5)*s,(10-2.5)*s,5*s,5*s)];
+    [gold setFill]; [pupil fill];
+    #undef P
+}
+@end
+
+// ── Gold intensity slider ─────────────────────────────────────────────────
+// Design: flat 3px white-15% track, 14px solid-gold knob (no blue OS chrome).
+@interface PESliderCell : NSSliderCell
+@end
+@implementation PESliderCell
+- (CGFloat)knobThickness { return 14; }
+- (void)drawBarInside:(NSRect)rect flipped:(BOOL)flipped {
+    CGFloat th=3;
+    NSRect r=NSMakeRect(NSMinX(rect), NSMidY(rect)-th/2, NSWidth(rect), th);
+    NSBezierPath *bg=[NSBezierPath bezierPathWithRoundedRect:r xRadius:1.5 yRadius:1.5];
+    [HEXA(255,255,255,.15) setFill]; [bg fill];
+}
+- (void)drawKnob:(NSRect)k {
+    CGFloat d=14;
+    NSRect kk=NSMakeRect(NSMidX(k)-d/2, NSMidY(k)-d/2, d, d);
+    [HEX(200,168,64) setFill]; [[NSBezierPath bezierPathWithOvalInRect:kk] fill];
+}
+@end
+
 // ── Nav row ───────────────────────────────────────────────────────────────
 @interface PENavRow : PECV
 @property (nonatomic, assign) BOOL selected;
@@ -66,7 +109,10 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
         _icon=[[NSImageView alloc] initWithFrame:NSMakeRect(16,(h-13)/2,13,13)];
         [self addSubview:_icon];
         _text=[NSTextField labelWithString:@""];
-        _text.frame=NSMakeRect(43,(h-16)/2,NSWidth(f)-50,16);
+        // Tighten the icon gap + widen to the row edge so "Circadian Rhythm" fits.
+        _text.frame=NSMakeRect(40,(h-16)/2,NSWidth(f)-40,16);
+        _text.cell.usesSingleLineMode=YES;
+        _text.cell.lineBreakMode=NSLineBreakByTruncatingTail;
         [self addSubview:_text];
     }
     return self;
@@ -79,8 +125,22 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     self.layer.backgroundColor=(_selected?HEXA(200,168,64,.20):NSColor.clearColor).CGColor;
     _circle.layer.backgroundColor=(_selected?HEXA(200,168,64,.18):HEXA(255,255,255,.07)).CGColor;
     _circle.layer.borderColor=(_selected?NSColor.clearColor:HEXA(255,255,255,.09)).CGColor;
-    _icon.contentTintColor=(_selected?HEX(212,188,96):HEX(96,80,72));
-    _text.font=[NSFont systemFontOfSize:13 weight:(_selected?NSFontWeightMedium:NSFontWeightRegular)];
+    // Active icon: Gold Pale glyph with a soft drop-shadow glow; idle = Text Muted.
+    _icon.contentTintColor=(_selected?HEX(242,223,160):HEX(154,138,116));
+    _icon.wantsLayer=YES;
+    _icon.layer.shadowColor=HEX(242,223,160).CGColor;   // Gold Pale glow
+    _icon.layer.shadowOffset=CGSizeZero;
+    _icon.layer.shadowRadius=_selected?3:0;             // ≈ drop-shadow(0 0 6px)
+    _icon.layer.shadowOpacity=_selected?0.45:0;
+    // Shrink-to-fit so long labels ("Circadian Rhythm") show in full in the
+    // fixed-width sidebar; short labels stay at the design 12.5pt.
+    NSFontWeight w=_selected?NSFontWeightMedium:NSFontWeightRegular;
+    CGFloat fs=12.5, avail=_text.frame.size.width-8;   // margin for cell insets
+    NSFont *f=[NSFont systemFontOfSize:fs weight:w];
+    while (fs>8 && [(_label?:@"") sizeWithAttributes:@{NSFontAttributeName:f}].width>avail) {
+        fs-=0.5; f=[NSFont systemFontOfSize:fs weight:w];
+    }
+    _text.font=f;
     _text.textColor=(_selected?HEX(213,210,197):HEX(122,106,88));
 }
 - (void)mouseUp:(NSEvent *)e {
@@ -251,6 +311,8 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
 // ── Main VC ───────────────────────────────────────────────────────────────
 @interface MenuBarViewController () {
     NSView *_panels[6];
+    NSView *_eyeCircle;   // Protection header eye disc (glows when live)
+    PEEye  *_eyeGlyph;
 }
 @property (nonatomic, strong) NSArray<PENavRow*>  *navRows;
 @property (nonatomic, assign) NSInteger            activeNav;
@@ -351,7 +413,7 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     PESep *bsep=[[PESep alloc] initWithFrame:NSMakeRect(0, PY(WIN_H-34,1), SIDE_W, 1)];
     [side addSubview:bsep];
     NSTextField *reset=[NSTextField labelWithString:@"Reset to defaults"];
-    reset.font=[NSFont systemFontOfSize:11]; reset.textColor=HEX(74,60,48);
+    reset.font=[NSFont systemFontOfSize:11]; reset.textColor=HEX(154,138,116);
     reset.frame=NSMakeRect(14, PY(WIN_H-25,14), SIDE_W-20, 14);
     [side addSubview:reset];
 
@@ -401,18 +463,15 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     CGFloat lx=PAD_V;
 
     // Eye circle: design top=28, h=50
-    NSView *eyeCircle=[[NSView alloc] initWithFrame:NSMakeRect(lx, PY(28,50), 50, 50)];
-    eyeCircle.wantsLayer=YES; eyeCircle.layer.cornerRadius=25;
-    eyeCircle.layer.backgroundColor=HEXA(200,168,64,.12).CGColor;
-    eyeCircle.layer.borderWidth=1.5;
-    eyeCircle.layer.borderColor=HEXA(200,168,64,.35).CGColor;
-    NSTextField *eyeIco=[NSTextField labelWithString:@"👁"];
-    eyeIco.font=[NSFont systemFontOfSize:20]; [eyeIco sizeToFit];
-    // Centered inside 50×50 — symmetric formula works in either orientation
-    eyeIco.frame=NSMakeRect((50-eyeIco.frame.size.width)/2,(50-eyeIco.frame.size.height)/2,
-                            eyeIco.frame.size.width, eyeIco.frame.size.height);
-    [eyeCircle addSubview:eyeIco];
-    [p addSubview:eyeCircle];
+    _eyeCircle=[[NSView alloc] initWithFrame:NSMakeRect(lx, PY(28,50), 50, 50)];
+    _eyeCircle.wantsLayer=YES; _eyeCircle.layer.cornerRadius=25;
+    _eyeCircle.layer.borderWidth=1.5;
+    _eyeCircle.layer.shadowColor=HEX(200,168,64).CGColor;   // gold glow when live
+    _eyeCircle.layer.shadowOffset=CGSizeZero;
+    // Gold line-art eye (design SVG), 22×22 centered inside the 50×50 circle.
+    _eyeGlyph=[[PEEye alloc] initWithFrame:NSMakeRect((50-22)/2,(50-22)/2,22,22)];
+    [_eyeCircle addSubview:_eyeGlyph];
+    [p addSubview:_eyeCircle];   // bg/border/glow set by updateProtectionUI
 
     // Title: design top=28, h=22
     NSTextField *title=[NSTextField labelWithString:@"Protection"];
@@ -448,7 +507,7 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     // NSView infoBox (h=76): "Active Texture" label at design top=12, h=12
     NSTextField *atLabel=[NSTextField labelWithString:@"Active Texture"];
     atLabel.font=[NSFont systemFontOfSize:9.5 weight:NSFontWeightBold];
-    atLabel.textColor=HEX(80,64,56);
+    atLabel.textColor=HEX(154,138,116);   // Text Muted (label)
     atLabel.frame=NSMakeRect(16, BOTY(76,12,12), boxW-32, 12);
     [infoBox addSubview:atLabel];
     // Texture name: design top=29, h=18 → BOTY(76,29,18)=29
@@ -479,6 +538,8 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
 
     // Slider: design top=273, h=20
     _intensitySlider=[[NSSlider alloc] initWithFrame:NSMakeRect(lx, PY(273,20), CONT_W-2*lx, 20)];
+    PESliderCell *sc=[[PESliderCell alloc] init]; sc.sliderType=NSSliderTypeLinear;
+    _intensitySlider.cell=sc;   // configure AFTER swapping cell (new cell resets state)
     _intensitySlider.minValue=0.05; _intensitySlider.maxValue=1.0;
     _intensitySlider.doubleValue=st.intensity; _intensitySlider.continuous=YES;
     _intensitySlider.target=self; _intensitySlider.action=@selector(sliderChanged:);
@@ -486,10 +547,10 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
 
     // Subtle/Strong: design top=297, h=13
     NSTextField *subtle=[NSTextField labelWithString:@"Subtle"];
-    subtle.font=[NSFont systemFontOfSize:9.5]; subtle.textColor=HEX(80,64,56);
+    subtle.font=[NSFont systemFontOfSize:9.5]; subtle.textColor=HEX(154,138,116);
     subtle.frame=NSMakeRect(lx, PY(297,13), 50, 13); [p addSubview:subtle];
     NSTextField *strong=[NSTextField labelWithString:@"Strong"];
-    strong.font=[NSFont systemFontOfSize:9.5]; strong.textColor=HEX(80,64,56);
+    strong.font=[NSFont systemFontOfSize:9.5]; strong.textColor=HEX(154,138,116);
     strong.alignment=NSTextAlignmentRight;
     strong.frame=NSMakeRect(CONT_W-lx-50, PY(297,13), 50, 13); [p addSubview:strong];
 
@@ -533,10 +594,10 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     // Label row: design top=144, h=13
     _tabLabel=[NSTextField labelWithString:@"TEXTURE IN DAYTIME MODE"];
     _tabLabel.font=[NSFont systemFontOfSize:9.5 weight:NSFontWeightBold];
-    _tabLabel.textColor=HEX(80,64,56);
+    _tabLabel.textColor=HEX(154,138,116);   // Text Muted (label)
     _tabLabel.frame=NSMakeRect(lx, PY(y,13), CONT_W-2*lx-60, 13); [p addSubview:_tabLabel];
     NSTextField *countLbl=[NSTextField labelWithString:@"◆ 9/9"];
-    countLbl.font=[NSFont systemFontOfSize:9.5]; countLbl.textColor=HEX(80,64,56);
+    countLbl.font=[NSFont systemFontOfSize:9.5]; countLbl.textColor=HEX(154,138,116); // Text Muted
     countLbl.alignment=NSTextAlignmentRight;
     countLbl.frame=NSMakeRect(CONT_W-lx-60, PY(y,13), 60, 13); [p addSubview:countLbl];
     y+=13+9; // y=166
@@ -707,15 +768,22 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     CGFloat fieldW=CONT_W-2*lx-8-70;
     // Field + Add button: design top=98, h=34
     // Combo box: type-to-filter list of every installed app (incl. native/system apps).
-    _exField=[[NSComboBox alloc] initWithFrame:NSMakeRect(lx, PY(y,26), fieldW, 26)];
-    _exField.placeholderString=@"Search apps…";
+    // Wrapped in a styled input box (design CSS) with a borderless, transparent combo.
+    NSView *fieldBox=[self inputBox:NSMakeRect(lx, PY(y,34), fieldW, 34)];
+    _exField=[[NSComboBox alloc] initWithFrame:NSMakeRect(12,(34-19)/2, fieldW-18, 19)];
+    _exField.placeholderString=@"e.g. Photoshop…";
     _exField.font=[NSFont systemFontOfSize:12.5];
+    _exField.textColor=HEX(192,189,176);
+    _exField.bordered=NO; _exField.drawsBackground=NO;
+    _exField.focusRingType=NSFocusRingTypeNone;
+    [(NSComboBoxCell*)_exField.cell setBezeled:NO];
     _exField.completes=YES;            // autocomplete as you type
     _exField.hasVerticalScroller=YES;
     _exField.numberOfVisibleItems=8;
     for (AppInfo *a in _allApps) if (a.name.length) [_exField addItemWithObjectValue:a.name];
     _exField.target=self; _exField.action=@selector(tapAddException);
-    [p addSubview:_exField];
+    [fieldBox addSubview:_exField];
+    [p addSubview:fieldBox];
 
     PEBtn *addBtn=[[PEBtn alloc] initWithFrame:NSMakeRect(lx+fieldW+8, PY(y,34), 70, 34)];
     addBtn.title=@"+ Add"; addBtn.primary=YES;
@@ -747,7 +815,7 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     if (!exc.count) {
         // Empty message: design top=100, h=16 in docH container
         NSTextField *empty=[NSTextField labelWithString:@"No exceptions — overlay appears everywhere"];
-        empty.font=[NSFont systemFontOfSize:12]; empty.textColor=HEX(80,64,56);
+        empty.font=[NSFont systemFontOfSize:12]; empty.textColor=HEX(154,138,116); // Text Muted
         empty.alignment=NSTextAlignmentCenter;
         empty.frame=NSMakeRect(0, BOTY(docH,100,16), bw, 16);
         [_exList addSubview:empty];
@@ -811,7 +879,7 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     // NSView statBox (h=60):
     // "Status" label: design top=12, h=13 → BOTY(60,12,13)=35
     NSTextField *sl=[NSTextField labelWithString:@"Status"];
-    sl.font=[NSFont systemFontOfSize:9.5 weight:NSFontWeightBold]; sl.textColor=HEX(80,64,56);
+    sl.font=[NSFont systemFontOfSize:9.5 weight:NSFontWeightBold]; sl.textColor=HEX(154,138,116); // Text Muted
     sl.frame=NSMakeRect(16, BOTY(60,12,13), 80, 13); [statBox addSubview:sl];
     // Gold dot: design top=32, h=8 → BOTY(60,32,8)=20
     NSView *dot=[[NSView alloc] initWithFrame:NSMakeRect(16, BOTY(60,32,8), 8, 8)];
@@ -823,13 +891,15 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     active.frame=NSMakeRect(30, BOTY(60,29,18), bw-50, 18); [statBox addSubview:active];
     [p addSubview:statBox];
 
-    // Key field: design top=172, h=34
-    NSTextField *kf=[[NSTextField alloc] initWithFrame:NSMakeRect(lx, PY(y,34), bw, 34)];
+    // Key field: design top=172, h=34. Styled input box + borderless field for padding.
+    NSView *kfBox=[self inputBox:NSMakeRect(lx, PY(y,34), bw, 34)];
+    NSTextField *kf=[[NSTextField alloc] initWithFrame:NSMakeRect(12,(34-16)/2, bw-24, 16)];
     kf.placeholderString=@"XXXX-XXXX-XXXX-XXXX";
-    kf.font=[NSFont monospacedSystemFontOfSize:13 weight:NSFontWeightRegular];
-    kf.backgroundColor=HEXA(0,0,0,.30); kf.textColor=HEX(192,189,176);
-    kf.bezelStyle=NSTextFieldRoundedBezel; kf.bordered=YES;
-    [p addSubview:kf]; y+=34+10; // y=216
+    kf.font=[NSFont monospacedSystemFontOfSize:12.5 weight:NSFontWeightRegular];
+    kf.textColor=HEX(192,189,176);
+    kf.drawsBackground=NO; kf.bordered=NO; kf.focusRingType=NSFocusRingTypeNone;
+    [kfBox addSubview:kf];
+    [p addSubview:kfBox]; y+=34+10; // y=216
 
     // Activate button: design top=216, h=38
     PEBtn *actBtn=[[PEBtn alloc] initWithFrame:NSMakeRect(lx, PY(y,38), bw, 38)];
@@ -859,6 +929,15 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     v.wantsLayer=YES; v.layer.cornerRadius=10;
     v.layer.backgroundColor=HEXA(0,0,0,.20).CGColor;
     v.layer.borderWidth=1; v.layer.borderColor=HEXA(255,255,255,.06).CGColor;
+    return v;
+}
+// Styled text-input container (design input[type=text]): black-30% bg, white-10%
+// hairline border, 8px radius. Hosts a borderless field/combo inset for padding.
+- (NSView*)inputBox:(NSRect)fr {
+    NSView *v=[[NSView alloc] initWithFrame:fr];
+    v.wantsLayer=YES; v.layer.cornerRadius=8;
+    v.layer.backgroundColor=HEXA(0,0,0,.30).CGColor;
+    v.layer.borderWidth=1; v.layer.borderColor=HEXA(255,255,255,.10).CGColor;
     return v;
 }
 // rowTitle: places title+sub in a roundBox of height boxH (NSView, y=0 at bottom).
@@ -1033,6 +1112,13 @@ static NSColor *HEXA(CGFloat r,CGFloat g,CGFloat b,CGFloat a){ return [NSColor c
     else if (on)  _statusTxt.stringValue=@"Protecting your screen";
     else          _statusTxt.stringValue=@"Protection is off";
     _statusTxt.textColor=(on&&!snz)?HEX(200,168,64):(snz?HEX(200,168,64):HEX(100,126,84));
+    // Eye glows gold while protection is live; neutral + dim when off/snoozed.
+    BOOL live=on&&!snz;
+    _eyeCircle.layer.backgroundColor=(live?HEXA(200,168,64,.12):HEXA(255,255,255,.05)).CGColor;
+    _eyeCircle.layer.borderColor=(live?HEXA(200,168,64,.35):HEXA(255,255,255,.10)).CGColor;
+    _eyeCircle.layer.shadowRadius=live?12:0;
+    _eyeCircle.layer.shadowOpacity=live?0.6:0;
+    _eyeGlyph.alphaValue=live?1.0:0.45;
     _activeTexTxt.stringValue=PMTextureName(st.selectedTexture);
     NSString *pct=[NSString stringWithFormat:@"%d%%",(int)(st.intensity*100)];
     _intensityTxt.stringValue=[NSString stringWithFormat:@"Intensity %@",pct];

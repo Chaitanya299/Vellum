@@ -50,7 +50,6 @@ static QTex kQuick[4] = {
 static NSString *kShort[4] = { @"Parchment", @"Aged Linen", @"Rice Paper", @"Vellum" };
 
 @implementation MenuBarPopover {
-    NSTextField *_statusPill;
     VCard       *_toggleCard;
     NSView      *_orbWrap;
     NSImageView *_orb;
@@ -95,11 +94,6 @@ static NSString *kShort[4] = { @"Parchment", @"Aged Linen", @"Rice Paper", @"Vel
     NSTextField *tag=[NSTextField labelWithAttributedString:
         [[NSAttributedString alloc] initWithString:@"EASE THE LIGHT" attributes:ta]];
     tag.frame=NSMakeRect(55, TY(37,10), 180, 10); [root addSubview:tag];
-
-    _statusPill=[NSTextField labelWithString:@"On"];
-    _statusPill.alignment=NSTextAlignmentCenter; _statusPill.wantsLayer=YES;
-    _statusPill.layer.cornerRadius=9; _statusPill.layer.borderWidth=1;
-    _statusPill.frame=NSMakeRect(PAD+IW-52, TY(21,18), 52, 18); [root addSubview:_statusPill];
 }
 
 // ── Controls grid ─────────────────────────────────────────────────────────
@@ -285,13 +279,6 @@ static NSString *kShort[4] = { @"Parchment", @"Aged Linen", @"Rice Paper", @"Vel
 - (void)refresh {
     SettingsStore *st=SettingsStore.shared;
     BOOL on=st.isEnabled, snooze=st.isSnoozed, live=on&&!snooze;
-
-    // status pill
-    _statusPill.stringValue=live?@"On":snooze?@"Snoozed":@"Off";
-    _statusPill.font=[NSFont systemFontOfSize:9.5 weight:NSFontWeightBold];
-    _statusPill.textColor=live?HEX(224,204,120):HEX(138,122,102);
-    _statusPill.layer.backgroundColor=(live?HEXA(200,168,64,.16):HEXA(255,255,255,.07)).CGColor;
-    _statusPill.layer.borderColor=(live?HEXA(200,168,64,.30):HEXA(255,255,255,.10)).CGColor;
 
     // toggle card
     if (live) {

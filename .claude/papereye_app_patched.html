@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+    input[type=range]{-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;background:rgba(255,255,255,.15);outline:none;cursor:pointer;}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#C8A840;cursor:pointer;}
+    input[type=text]{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;font-size:12.5px;color:#C0BDB0;outline:none;font-family:inherit;}
+    ::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
+    .pe-grain{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");background-size:200px 200px;background-repeat:repeat;}
+  </style>
+</helmet>
+
+<div style="{{ pageStyle }}">
+
+  <div style="width:610px;height:475px;border-radius:16px;overflow:hidden;display:flex;box-shadow:0 28px 80px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.07);background-color:#1A1816;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;">
+
+    <!-- SIDEBAR -->
+    <div class="pe-grain" style="width:158px;background-color:#141210;display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid rgba(255,255,255,.055);padding:20px 0 14px;">
+      <div style="padding:0 14px 14px;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <dc-import name="VellumIcon" hint-size="28px,28px" style="width:28px;height:28px;flex-shrink:0;border-radius:7px;"></dc-import>
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:20px;color:#EFE6D2;line-height:1;">Vellum</div>
+            <div style="font-size:8px;color:#8A6A44;letter-spacing:.22em;text-transform:uppercase;margin-top:3px;">Ease the Light</div>
+          </div>
+        </div>
+      </div>
+      <div style="height:1px;background:rgba(255,255,255,.055);margin:0 14px 10px;"></div>
+
+      <div style="flex:1;padding:0 8px;overflow-y:auto;">
+        <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="6">
+          <div onClick="{{ item.onClick }}" style="{{ item.rowStyle }}">
+            <div style="{{ item.iconWrap }}">{{ item.icon }}</div>
+            <span>{{ item.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="padding:10px 14px 0;border-top:1px solid rgba(255,255,255,.055);">
+        <span style="font-size:11px;color:#4A3C30;cursor:pointer;">Reset to defaults</span>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="pe-grain" style="flex:1;overflow-y:auto;background-color:#1A1816;">
+
+      <!-- PROTECTION -->
+      <sc-if value="{{ showProtection }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:28px 26px;">
+          <div style="display:flex;align-items:center;gap:13px;margin-bottom:22px;">
+            <div style="{{ protCircle }}">
+              <svg viewBox="0 0 20 20" width="22" height="22" fill="none" stroke="#C8A840" stroke-width="1.5" stroke-linecap="round">
+                <path d="M2,10S5,4 10,4s8,6 8,6S15,16 10,16s-8-6-8-6z"></path>
+                <circle cx="10" cy="10" r="2.5" fill="#C8A840" stroke="none"></circle>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size:18px;font-weight:600;color:#E2DED1;">Protection</div>
+              <div style="{{ statusTxtStyle }}">{{ statusText }}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-bottom:20px;">
+            <div onClick="{{ toggleOn }}" style="{{ onBtnStyle }}">{{ onLabel }}</div>
+            <div onClick="{{ toggleSnooze }}" style="{{ snoozeBtnStyle }}">{{ snoozeLabel }}</div>
+          </div>
+
+          <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:13px 16px;margin-bottom:20px;border:1px solid rgba(255,255,255,.06);">
+            <div style="font-size:9.5px;font-weight:700;color:#504038;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;">Active Texture</div>
+            <div style="font-size:13.5px;color:#D0CBC0;font-weight:500;">{{ activeTextureName }}</div>
+            <div style="font-size:11px;color:#618056;margin-top:3px;">Intensity {{ opacityPct }}%</div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:7px;">
+              <span style="font-size:12px;font-weight:500;color:#7A6A58;">Intensity</span>
+              <span style="font-size:12px;color:#7A6A58;font-variant-numeric:tabular-nums;">{{ opacityPct }}%</span>
+            </div>
+            <input type="range" min="0" max="1" step="0.01" value="{{ opacity }}" onChange="{{ handleOpacity }}" style="width:100%;">
+            <div style="display:flex;justify-content:space-between;margin-top:4px;">
+              <span style="font-size:9.5px;color:#504038;">Subtle</span>
+              <span style="font-size:9.5px;color:#504038;">Strong</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- TEXTURES -->
+      <sc-if value="{{ showTextures }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:26px 24px 20px;">
+          <div style="font-size:18px;font-weight:600;color:#E2DED1;margin-bottom:4px;">Texture Presets</div>
+          <div style="font-size:12px;color:#706050;margin-bottom:16px;line-height:1.5;">Pick a texture for each theme. Adjust intensity from the menu bar.</div>
+
+          <div style="display:inline-flex;background:rgba(0,0,0,.3);border-radius:9px;padding:3px;gap:2px;margin-bottom:14px;">
+            <div onClick="{{ setDaytime }}" style="{{ tabDay }}">☀ Daytime</div>
+            <div onClick="{{ setNighttime }}" style="{{ tabNight }}">
+              ◑ Nighttime
+              <sc-if value="{{ isNight }}" hint-placeholder-val="{{ false }}">
+                <span style="background:#3E2C06;color:#D4BC60;font-size:8px;font-weight:700;padding:1px 5px;border-radius:4px;letter-spacing:.04em;margin-left:3px;">NOW</span>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+            <span style="font-size:9.5px;font-weight:700;color:#504038;letter-spacing:.09em;text-transform:uppercase;">TEXTURE IN {{ tabLabel }} MODE</span>
+            <span style="font-size:9.5px;color:#504038;">◆ {{ texCount }}/{{ texCount }}</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;">
+            <sc-for list="{{ texItems }}" as="tx" hint-placeholder-count="9">
+              <div onClick="{{ tx.select }}" style="{{ tx.card }}">
+                <div style="{{ tx.thumb }}">
+                  <sc-if value="{{ tx.badge }}" hint-placeholder-val="{{ null }}">
+                    <div style="position:absolute;top:5px;left:5px;background:rgba(50,40,8,.92);color:#D4BC60;font-size:7.5px;font-weight:700;padding:2px 5px;border-radius:4px;letter-spacing:.05em;text-transform:uppercase;">{{ tx.badge }}</div>
+                  </sc-if>
+                  <sc-if value="{{ tx.selected }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;top:5px;right:5px;width:17px;height:17px;border-radius:9px;background:#C8A840;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;">✓</div>
+                  </sc-if>
+                  <sc-if value="{{ tx.bl }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;bottom:4px;right:5px;font-size:10px;opacity:.8;">☀</div>
+                  </sc-if>
+                </div>
+                <div style="padding:5px 7px 6px;background:rgba(0,0,0,.18);">
+                  <div style="font-size:10px;font-weight:500;color:#B0ADA0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ tx.name }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- CIRCADIAN RHYTHM -->
+      <sc-if value="{{ showCircadian }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:28px 26px;">
+          <div style="font-size:18px;font-weight:600;color:#E2DED1;margin-bottom:4px;">Circadian Rhythm</div>
+          <div style="font-size:12px;color:#706050;margin-bottom:20px;line-height:1.5;">Automatically switch textures based on the time of day.</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.2);border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid rgba(255,255,255,.06);">
+            <div>
+              <div style="font-size:13px;font-weight:500;color:#D0CBC0;">Enable Schedule</div>
+              <div style="font-size:11px;color:#618056;margin-top:2px;">Auto-switch at sunrise and sunset</div>
+            </div>
+            <div style="width:36px;height:20px;border-radius:10px;background:#C8A840;position:relative;cursor:pointer;">
+              <div style="width:16px;height:16px;border-radius:8px;background:white;position:absolute;top:2px;right:2px;"></div>
+            </div>
+          </div>
+          <div style="background:rgba(0,0,0,.2);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.06);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:28px;height:28px;border-radius:14px;background:rgba(255,220,80,.1);display:flex;align-items:center;justify-content:center;font-size:14px;">☀</div>
+                <div>
+                  <div style="font-size:12.5px;font-weight:500;color:#D0CBC0;">Daytime</div>
+                  <div style="font-size:10.5px;color:#605040;">Warm Parchment</div>
+                </div>
+              </div>
+              <div style="font-size:12px;color:#7A6A58;font-weight:500;">7:00 AM</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:28px;height:28px;border-radius:14px;background:rgba(100,140,255,.08);display:flex;align-items:center;justify-content:center;font-size:14px;">◑</div>
+                <div>
+                  <div style="font-size:12.5px;font-weight:500;color:#D0CBC0;">Nighttime</div>
+                  <div style="font-size:10.5px;color:#605040;">Amber Shield</div>
+                </div>
+              </div>
+              <div style="font-size:12px;color:#7A6A58;font-weight:500;">8:00 PM</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- DISPLAY -->
+      <sc-if value="{{ showDisplay }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:28px 26px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <div style="width:26px;height:26px;border-radius:13px;background:rgba(200,168,64,.12);display:flex;align-items:center;justify-content:center;">
+              <svg viewBox="0 0 12 12" width="13" height="13" fill="none" stroke="#C8A840" stroke-width="1.3" stroke-linecap="round"><path d="M.5,1.5h11v7.5H.5z"></path><path d="M4,9l-.5,2.5h5L8,9M3,11.5h6"></path></svg>
+            </div>
+            <div style="font-size:18px;font-weight:600;color:#E2DED1;">Display</div>
+          </div>
+          <div style="font-size:12px;color:#706050;margin-bottom:18px;">Choose which monitor the overlay covers.</div>
+          <div style="display:inline-flex;background:rgba(0,0,0,.3);border-radius:8px;padding:3px;gap:2px;margin-bottom:16px;">
+            <div style="padding:5px 20px;border-radius:6px;background:#32280A;color:#D5D2C5;font-size:13px;font-weight:500;cursor:pointer;">1</div>
+            <div style="padding:5px 20px;border-radius:6px;color:#605040;font-size:13px;cursor:pointer;">2</div>
+          </div>
+          <div style="background:rgba(0,0,0,.2);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:22px;height:22px;border-radius:11px;background:#32280A;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#D4BC60;">1</div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:13px;font-weight:500;color:#D0CBC0;">Primary Display</span>
+                    <span style="background:rgba(200,168,64,.18);color:#D4BC60;font-size:8px;font-weight:700;padding:1px 5px;border-radius:4px;letter-spacing:.04em;">MAIN</span>
+                  </div>
+                  <div style="font-size:11px;color:#605040;margin-top:1px;">3104 × 1964</div>
+                </div>
+              </div>
+              <div style="color:#C8A840;font-size:14px;">✓</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:22px;height:22px;border-radius:11px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#618056;">2</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;color:#D0CBC0;">Display 2</div>
+                  <div style="font-size:11px;color:#605040;margin-top:1px;">1920 × 1080</div>
+                </div>
+              </div>
+              <div style="color:#C8A840;font-size:14px;">✓</div>
+            </div>
+          </div>
+          <div style="text-align:right;margin-top:10px;">
+            <span style="font-size:11.5px;color:#605040;cursor:pointer;">↻ Refresh display output</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- EXCEPTIONS -->
+      <sc-if value="{{ showExceptions }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:28px 26px;">
+          <div style="font-size:18px;font-weight:600;color:#E2DED1;margin-bottom:4px;">App Exceptions</div>
+          <div style="font-size:12px;color:#706050;margin-bottom:16px;line-height:1.5;">Vellum will be automatically disabled for these apps.</div>
+          <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <input type="text" placeholder="e.g. Photoshop…" style="flex:1;">
+            <div style="padding:8px 14px;border-radius:8px;background:#32280A;color:#D4BC60;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid rgba(200,168,64,.22);white-space:nowrap;">+ Add</div>
+          </div>
+          <div style="background:rgba(0,0,0,.2);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.06);">
+              <span style="font-size:13px;color:#C0BDB0;">Illustrator</span>
+              <div style="width:20px;height:20px;border-radius:5px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#605040;font-size:12px;">✕</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.06);">
+              <span style="font-size:13px;color:#C0BDB0;">Affinity</span>
+              <div style="width:20px;height:20px;border-radius:5px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#605040;font-size:12px;">✕</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;">
+              <span style="font-size:13px;color:#C0BDB0;">Figma</span>
+              <div style="width:20px;height:20px;border-radius:5px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#605040;font-size:12px;">✕</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- LICENSE -->
+      <sc-if value="{{ showLicense }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:28px 26px;">
+          <div style="font-size:18px;font-weight:600;color:#E2DED1;margin-bottom:4px;">License</div>
+          <div style="font-size:12px;color:#706050;margin-bottom:20px;">Manage your Vellum license.</div>
+          <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:14px 16px;margin-bottom:14px;border:1px solid rgba(255,255,255,.06);">
+            <div style="font-size:9.5px;font-weight:700;color:#504038;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Status</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:8px;height:8px;border-radius:4px;background:#C8A840;box-shadow:0 0 7px rgba(200,168,64,.5);flex-shrink:0;"></div>
+              <span style="font-size:13px;color:#D4BC60;font-weight:500;">Active · Personal License</span>
+            </div>
+          </div>
+          <input type="text" placeholder="XXXX-XXXX-XXXX-XXXX" style="width:100%;font-family:'SF Mono',Menlo,monospace;letter-spacing:.08em;margin-bottom:10px;">
+          <div style="padding:9px;text-align:center;border-radius:8px;background:#32280A;color:#D4BC60;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(200,168,64,.2);">Activate License</div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <!-- Background presets -->
+  <div style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+    <sc-for list="{{ bgSwatches }}" as="sw" hint-placeholder-count="4">
+      <div onClick="{{ sw.onClick }}" style="{{ sw.style }}" title="{{ sw.label }}"></div>
+    </sc-for>
+    <span style="font-size:9px;color:rgba(255,255,255,.2);letter-spacing:.06em;text-transform:uppercase;margin-left:3px;">Background</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { nav:1, tab:0, sel:0, on:true, opacity:.40, snooze:false, textureUrls:null, bgIdx:0 };
+
+  BG=[
+    {g:'linear-gradient(155deg,#18100A 0%,#0C0A06 50%,#090808 100%)',       c:'#3C2818', l:'Warm Dark'},
+    {g:'linear-gradient(160deg,#2C1A0E 0%,#1C1410 35%,#0E1418 70%,#141A24 100%)', c:'#3C2A16', l:'Warm Dusk'},
+    {g:'linear-gradient(155deg,#0C1C30 0%,#081420 50%,#060808 100%)',       c:'#0C2038', l:'Deep Ocean'},
+    {g:'linear-gradient(155deg,#1E1030 0%,#120C22 50%,#0A0A10 100%)',       c:'#201438', l:'Twilight'},
+  ];
+
+  T = [
+    {name:'Warm Parchment', type:'grain',      base:[245,237,214], grainAmt:.088, scale:.022, seed:0,    def:.40},
+    {name:'Aged Linen',     type:'weave',      base:[237,232,222], fiber:[165,152,135], scale:.028, seed:100, def:.45},
+    {name:'Ivory Script',   type:'grain',      base:[251,247,238], grainAmt:.030, scale:.042, seed:200, def:.32},
+    {name:'Kraft Press',    type:'grain',      base:[196,165,118], grainAmt:.140, scale:.018, seed:300, def:.35},
+    {name:'Newsprint',      type:'newsprint',  base:[224,218,203], seed:400, def:.42},
+    {name:'Rice Paper',     type:'fiber',      base:[248,244,237], seed:500, def:.44},
+    {name:'Bamboo Weave',   type:'weave',      base:[229,235,215], fiber:[168,178,148], scale:.028, seed:600, def:.40},
+    {name:'Watercolor',     type:'watercolor', base:[241,235,224], seed:700, def:.38},
+    {name:'Cream Vellum',   type:'grain',      base:[249,246,241], grainAmt:.022, scale:.050, seed:800, def:.28},
+    {name:'Dark Parchment', type:'dark',       base:[28,20,14],    seed:900, def:.18},
+    {name:'Amber Shield',   type:'amber',      base:[255,186,102], grainAmt:.070, scale:.024, seed:1000, def:.50, bl:true},
+    {name:'Night Guard',    type:'amber',      base:[255,122,55],  grainAmt:.055, scale:.024, seed:1100, def:.60, bl:true},
+  ];
+
+  componentDidMount(){ setTimeout(()=>this._gen(),80); }
+
+  _h(x,y,s){const n=Math.sin(x*127.1+y*311.7+s*74.3)*43758.5453;return n-Math.floor(n);}
+  _lp(a,b,t){return a+(b-a)*t;}
+  _sm(t){return t*t*(3-2*t);}
+  _n2(x,y,s){const ix=Math.floor(x),iy=Math.floor(y),fx=this._sm(x-ix),fy=this._sm(y-iy);return this._lp(this._lp(this._h(ix,iy,s),this._h(ix+1,iy,s),fx),this._lp(this._h(ix,iy+1,s),this._h(ix+1,iy+1,s),fx),fy);}
+  _fbm(x,y,s,o=4){let v=0,a=.5,f=1,t=0;for(let i=0;i<o;i++){v+=this._n2(x*f,y*f,s+i*17)*a;t+=a;a*=.5;f*=2;}return v/t;}
+
+  _gen(){
+    const S=512;
+    const urls=this.T.map(cfg=>{
+      const c=document.createElement('canvas');c.width=S;c.height=S;
+      const ctx=c.getContext('2d');
+      this._fillBase(ctx,S,S,cfg.base);
+      const id=ctx.getImageData(0,0,S,S);
+      if(cfg.type==='grain'||cfg.type==='amber') this._pxNoise(id,S,S,cfg.grainAmt,cfg.scale,cfg.seed,cfg.type==='amber'?1:.95,cfg.type==='amber'?.52:.88,cfg.type==='amber'?.08:.7);
+      else if(cfg.type==='weave'){this._pxNoise(id,S,S,.04,cfg.scale||.028,cfg.seed,1,1,1,3);ctx.putImageData(id,0,0);this._drawWeave(ctx,S,S,cfg.fiber,cfg.seed);return c.toDataURL();}
+      else if(cfg.type==='fiber'){this._pxNoise(id,S,S,.038,.026,cfg.seed,1,1,1,4);ctx.putImageData(id,0,0);this._drawFibers(ctx,S,S,cfg.seed);return c.toDataURL();}
+      else if(cfg.type==='newsprint'){this._newsprint(id,S,S,cfg.seed);}
+      else if(cfg.type==='watercolor'){this._watercolor(id,S,S,cfg.seed);ctx.putImageData(id,0,0);this._waterVign(ctx,S,S);return c.toDataURL();}
+      else if(cfg.type==='dark'){const d=id.data;for(let y=0;y<S;y++)for(let x=0;x<S;x++){const i=(y*S+x)*4,v=this._fbm(x*.022,y*.022,cfg.seed,5)*62;d[i]=Math.min(255,d[i]+v);d[i+1]=Math.min(255,d[i+1]+v*.55);d[i+2]=Math.min(255,d[i+2]+v*.18);};}
+      ctx.putImageData(id,0,0);
+      return c.toDataURL();
+    });
+    this.setState({textureUrls:urls});
+  }
+
+  _fillBase(ctx,w,h,b){ctx.fillStyle=`rgb(${b[0]},${b[1]},${b[2]})`;ctx.fillRect(0,0,w,h);}
+  _pxNoise(id,w,h,amt,sc,seed,rB,gB,bB,oct=5){const d=id.data;for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,n=this._fbm(x*sc,y*sc,seed,oct),delta=(n-.5)*2*amt*255;d[i]=Math.max(0,Math.min(255,d[i]+delta*rB));d[i+1]=Math.max(0,Math.min(255,d[i+1]+delta*gB));d[i+2]=Math.max(0,Math.min(255,d[i+2]+delta*bB));}}
+  _drawWeave(ctx,w,h,fc,seed){const[fr,fg,fb]=fc;for(let y=2;y<h;y+=4){ctx.strokeStyle=`rgba(${fr},${fg},${fb},.25)`;ctx.lineWidth=.75;ctx.beginPath();ctx.moveTo(0,y);for(let x=0;x<=w;x+=5)ctx.lineTo(x,y+(this._h(x*.4,y*.4,seed)-.5)*1.6);ctx.stroke();}for(let x=2;x<w;x+=4){ctx.strokeStyle=`rgba(${fr},${fg},${fb},.18)`;ctx.lineWidth=.75;ctx.beginPath();ctx.moveTo(x,0);for(let y=0;y<=h;y+=5)ctx.lineTo(x+(this._h(x*.4,y*.4,seed+77)-.5)*1.6,y);ctx.stroke();}}
+  _drawFibers(ctx,w,h,seed){for(let f=0;f<100;f++){const[r0,r1,r2,r3,r4,r5]=[0,1,2,3,4,5].map(i=>this._h(f,i,seed));const x0=r0*w,y0=r1*h,len=50+r2*150,ang=r3*Math.PI*2,dx=Math.cos(ang)*len,dy=Math.sin(ang)*len;ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo(x0+dx*.5+(r4-.5)*50,y0+dy*.5+(r5-.5)*50,x0+dx,y0+dy);ctx.strokeStyle=`rgba(138,118,88,${.05+r2*.11})`;ctx.lineWidth=.35+r3*.85;ctx.stroke();}}
+  _newsprint(id,w,h,seed){const d=id.data;for(let y=0;y<h;y++){const band=(this._n2(0,y*.04,seed)-.5)*12;for(let x=0;x<w;x++){const i=(y*w+x)*4,delta=(this._fbm(x*.028,y*.028,seed+50,4)-.5)*22+band;d[i]=Math.max(0,Math.min(255,d[i]+delta));d[i+1]=Math.max(0,Math.min(255,d[i+1]+delta));d[i+2]=Math.max(0,Math.min(255,d[i+2]+delta*.8));}}}
+  _watercolor(id,w,h,seed){const d=id.data;for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,n=this._fbm(x*.0055,y*.0055,seed,6)*.68+this._fbm(x*.028,y*.028,seed+400,3)*.32,delta=(n-.5)*38;d[i]=Math.max(0,Math.min(255,d[i]+delta*.82));d[i+1]=Math.max(0,Math.min(255,d[i+1]+delta*.70));d[i+2]=Math.max(0,Math.min(255,d[i+2]+delta*.52));}}
+  _waterVign(ctx,w,h){const g=ctx.createRadialGradient(w/2,h/2,w*.25,w/2,h/2,w*.78);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(130,100,60,.16)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}
+
+  _ico(...paths){return React.createElement('svg',{viewBox:'0 0 12 12',width:12,height:12,fill:'none',stroke:'currentColor',strokeWidth:1.3,strokeLinecap:'round',strokeLinejoin:'round'},...paths.map((d,i)=>React.createElement('path',{key:i,d})));}
+
+  renderVals(){
+    const {nav,tab,sel,on,opacity,snooze,textureUrls:urls,bgIdx}=this.state;
+    const T=this.T;
+
+    const ICONS=[
+      this._ico('M6,.5L.5,3V6c0,3.2 2.5,5.3 5.5,5.7C9,10.3 11.5,8.2 11.5,6V3L6,.5z'),
+      this._ico('M.5,3.5C3.5,2 8.5,5 11.5,3.5','M.5,6.5C3.5,5 8.5,8 11.5,6.5','M.5,9.5C3.5,8 8.5,11 11.5,9.5'),
+      this._ico('M8.5,2A4.5,4.5 0,0,1 8.5,10 A5,5 0,1,0 8.5,2z'),
+      this._ico('M.5,1.5h11v7.5H.5z','M4,9l-.5,2.5h5L8,9','M3,11.5h6'),
+      this._ico('M6,.5A5.5,5.5 0,1,0 6,11.5A5.5,5.5 0,0,0 6,.5z','M3.5,3.5l5,5','M8.5,3.5l-5,5'),
+      this._ico('M6,.5A5.5,5.5 0,1,0 6,11.5A5.5,5.5 0,0,0 6,.5z','M3.5,6l2,2L9,3.5'),
+    ];
+    const LABELS=['Protection','Textures','Circadian Rhythm','Display','Exceptions','License'];
+
+    const navItems=LABELS.map((label,i)=>{
+      const a=nav===i;
+      return{
+        label,icon:ICONS[i],onClick:()=>this.setState({nav:i}),
+        rowStyle:{display:'flex',alignItems:'center',gap:9,padding:'7px 10px',borderRadius:7,cursor:'pointer',marginBottom:2,userSelect:'none',background:a?'rgba(200,168,64,.2)':'transparent',color:a?'#D5D2C5':'#7A6A58',fontSize:13,fontWeight:a?500:400,transition:'background .12s,color .12s'},
+        iconWrap:{width:24,height:24,borderRadius:12,flexShrink:0,background:a?'rgba(200,168,64,.18)':'rgba(255,255,255,.07)',border:a?'none':'1px solid rgba(255,255,255,.09)',display:'flex',alignItems:'center',justifyContent:'center',color:a?'#D4BC60':'#605048'},
+      };
+    });
+
+    // Texture grid
+    const idxArr=tab===0?[0,1,2,3,4,5,6,7,8]:[9,10,11];
+    const BADGES={0:'RECOMMENDED',2:'NEW'};
+    const texItems=idxArr.map((gi,li)=>{
+      const t=T[gi],active=sel===gi;
+      return{
+        name:t.name,badge:BADGES[li]||null,bl:t.bl||false,
+        select:()=>this.setState({sel:gi,opacity:t.def}),selected:active,
+        card:{borderRadius:8,overflow:'hidden',cursor:'pointer',position:'relative',border:active?'1.5px solid #C8A840':'1.5px solid rgba(255,255,255,.07)',background:'#243820',transition:'border-color .12s'},
+        thumb:{height:62,position:'relative',backgroundImage:urls&&urls[gi]?`url(${urls[gi]})`:'none',backgroundColor:`rgb(${t.base[0]},${t.base[1]},${t.base[2]})`,backgroundSize:'80px 80px',backgroundRepeat:'repeat'},
+      };
+    });
+
+    const tabBase={padding:'5px 14px',borderRadius:6,fontSize:12.5,fontWeight:500,cursor:'pointer',userSelect:'none',display:'flex',alignItems:'center',gap:5,transition:'background .12s,color .12s'};
+    const sClr=snooze?'#C8A840':on?'#C8A840':'#6A7E64';
+
+    return{
+      navItems,
+      showProtection:nav===0,showTextures:nav===1,showCircadian:nav===2,showDisplay:nav===3,showExceptions:nav===4,showLicense:nav===5,
+      // protection
+      on,snooze,opacity,
+      onLabel:on?'◉ On':'○ Off',
+      snoozeLabel:snooze?'⏰ Snoozed':'⏸ Snooze',
+      opacityPct:Math.round(opacity*100),
+      toggleOn:()=>this.setState({on:!on,snooze:false}),
+      toggleSnooze:()=>this.setState({snooze:!snooze}),
+      handleOpacity:e=>this.setState({opacity:parseFloat(e.target.value)}),
+      activeTextureName:T[sel]?.name||'',
+      statusText:snooze?'Snoozed · resumes at 8:00 AM':on?'Protecting your screen':'Protection is off',
+      statusTxtStyle:{fontSize:12.5,color:sClr,marginTop:3,lineHeight:1.4},
+      protCircle:{width:50,height:50,borderRadius:25,flexShrink:0,background:on&&!snooze?'rgba(200,168,64,.12)':'rgba(255,255,255,.05)',border:`1.5px solid ${on&&!snooze?'rgba(200,168,64,.35)':'rgba(255,255,255,.1)'}`,display:'flex',alignItems:'center',justifyContent:'center',boxShadow:on&&!snooze?'0 0 18px rgba(200,168,64,.2)':'none'},
+      onBtnStyle:{padding:'8px 20px',borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:500,userSelect:'none',background:on?'#32280A':'rgba(255,255,255,.08)',color:on?'#D4BC60':'#8A9E83',border:`1px solid ${on?'rgba(200,168,64,.25)':'rgba(255,255,255,.1)'}`},
+      snoozeBtnStyle:{padding:'8px 16px',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:500,userSelect:'none',background:snooze?'rgba(200,168,64,.15)':'rgba(255,255,255,.07)',color:snooze?'#C8A840':'#7A6A58',border:`1px solid ${snooze?'rgba(200,168,64,.25)':'rgba(255,255,255,.08)'}`},
+      // textures
+      tab,setDaytime:()=>this.setState({tab:0}),setNighttime:()=>this.setState({tab:1}),
+      tabDay:{...tabBase,background:tab===0?'#32280A':'transparent',color:tab===0?'#D5D2C5':'#605040'},
+      tabNight:{...tabBase,background:tab===1?'#32280A':'transparent',color:tab===1?'#D5D2C5':'#605040'},
+      tabLabel:tab===0?'DAYTIME':'NIGHTTIME',
+      texItems,texCount:idxArr.length,isNight:tab===1,
+      pageStyle:{width:'100vw',height:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:this.BG[bgIdx].g},
+      bgSwatches:this.BG.map((b,i)=>({
+        onClick:()=>this.setState({bgIdx:i}),
+        label:b.l,
+        style:{width:12,height:12,borderRadius:6,background:b.c,cursor:'pointer',flexShrink:0,border:bgIdx===i?'2px solid rgba(255,255,255,.6)':'2px solid rgba(255,255,255,.14)'},
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

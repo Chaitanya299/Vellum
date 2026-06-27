@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+._*
+
+# Build output / compiled binaries
+*.o
+*.a
+*.dylib
+Vellum.app/
+
+# Secrets
+.env
+*.pem
+*.p12
+*.mobileprovision
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Playwright MCP logs/state
+.playwright-mcp/
+
